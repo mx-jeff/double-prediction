@@ -2,6 +2,8 @@ import logging
 from scrapper_boilerplate import setSelenium, explicit_wait, mimic_user_input, load_code, dataToCSV
 from selenium.webdriver.common.by import By
 
+from database import mongoInsert
+
 
 def login(driver, user_target):
     logging.info("Log in...")
@@ -16,6 +18,7 @@ def login(driver, user_target):
 
 
 def extract_bets(page):
+
     logging.info(f"Extracting page {page}...")
     with setSelenium(headless=True, profile=True) as driver:
         driver.set_window_size(2000, 1900)
@@ -43,4 +46,4 @@ def extract_bets(page):
                 }
                 
                 logging.info(to_save)
-                dataToCSV(to_save, "data/blaze-double.csv")
+                mongoInsert([to_save])
