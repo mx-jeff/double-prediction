@@ -4,3 +4,4 @@ __pycache__
 data/*.html
 data/*.csv
 default/
+data/old_data/*.csv

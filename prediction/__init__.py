@@ -31,52 +31,59 @@ def get_profile_report(df, filename:str="data/blaze.html"):
     profile.to_file(filename)
 
 
-def preprocess(data):
-    # df = pd.read_csv("data/blaze_double.csv", error_bad_lines=False)
-    if not data:
-        logging.error("No data")
-        return
+def preprocess(data, filepath=None):
+    if filepath:
+        df = pd.read_csv("data/blaze_double.csv", error_bad_lines=False)
     
+    else:
+        if not data:
+            logging.error("No data")
+            return
+    
+    # load and drop mongo id
     df = pd.DataFrame(data)
     df = df.drop("_id", axis=1)
+    
+    # convert to datetime format
     df['datetime'] = df['date'].str.cat(df['minute'], sep=' ')
-    df = df.drop(columns=["minute", 'date'], axis=1)
+    df = df.replace({'Dia:':''}, regex = True)
+    df['datetime'] = pd.to_datetime(df.datetime, format=" %d/%m/%Y %H:%M")
+    
+    # number = df['number'] #.dropna(axis=0, how="all")
+    dummies = pd.get_dummies(df['color'], columns=df['color'])
+    dummies = dummies.drop('White', axis=1)
+    df = pd.concat([df, dummies], axis=1)
+    
+    # drop list
+    df = df.drop(columns=["minute", 'date', 'color', 'seed', 'whitebets', 'redbets', 'blackbets'], axis=1)
 
+    # remove duplicates and missing value
     df = df.dropna(axis=0)
     df = df.drop_duplicates()
-    get_profile_report(df)
-    # df = df[['color', 'number']]
-    # number = df['number'] #.dropna(axis=0, how="all")
-    # dummies = pd.get_dummies(df['color'], columns=df['color'])
-    # dummies = dummies.drop('White', axis=1)
-    # df = pd.concat([number, dummies], axis=1)
-    # df = df.drop_duplicates()
-
-    print(len(df))
-    # get_profile_report(df, 'data/clean.html')
-    # df.to_csv('data/blaze_double_clean.csv', index=False)
+    # get_profile_report(df)
+    # print(df)
+    # print(len(df))
     return df
 
 
 def prediction():
     no_sql_data = mongodb_read()
     df = preprocess(no_sql_data)
-    # df = pd.read_csv("data/blaze_double_clean.csv")
    
-    # X = df['number']
-    # Y = df.drop(columns=['number'], axis=1)
+    X = df['number']
+    Y = df.drop(columns=['number'], axis=1)
 
-    # X = df.iloc[:, 0].values
-    # Y = df.iloc[:, 1].values
-    # X = X.reshape(-1,1)
+    X = df.iloc[:, 0].values
+    Y = df.iloc[:, 1].values
+    X = X.reshape(-1,1)
 
-    # x_train, x_test, y_train, y_test = train_test_split(X, Y)
+    x_train, x_test, y_train, y_test = train_test_split(X, Y)
     
-    # model = LinearRegression() #DecisionTreeRegressor() #
-    # model.fit(x_train, y_train)
+    model =  LinearRegression() #DecisionTreeRegressor() 
+    model.fit(x_train, y_train)
 
-    # prediction = model.predict(x_test)
-    # # print(prediction)
+    prediction = model.predict(x_test)
+    print(prediction)
     # # display_stats(y_test/10000, prediction/10000)
-    # validate(x_test, prediction)
+    validate(x_test, prediction)
     
